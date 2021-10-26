@@ -100,7 +100,7 @@ void STLReader::open( const std::string &filePath )
     in->open( filePath.c_str() );
 
     // throw error if file fails to open
-    if ( !in )
+    if ( !in->is_open() )
     {
         throw STLReaderException( "File does not exist." );
     }

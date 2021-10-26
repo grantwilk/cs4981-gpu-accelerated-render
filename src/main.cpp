@@ -32,16 +32,15 @@ int main()
     /* ---------------------------- Print Header ---------------------------- */
 
     cout << endl;
-    cout << "/* ====== Grant's Spectacular 3D Art Designer ====== */" << endl;
+    cout << "/* =========== GPU Accelerated 3D Renderer =========== */" << endl;
     cout << endl;
     cout << endl;
     cout << "  VIEW CONTROLS:" << endl;
     cout << "  LMB    - Pan" << endl;
-    cout << "  MMB    - Orbit" << endl;
+    cout << "  RMB    - Orbit" << endl;
     cout << "  SCROLL - Zoom" << endl;
     cout << "  R      - Reset 3D View" << endl;
     cout << "  A      - Toggle 3D Axis" << endl;
-    cout << "  CTRL   - Toggle Color Target" << endl;
     cout << endl;
     cout << "  FILE CONTROLS:" << endl;
     cout << "  O - Open File" << endl;
