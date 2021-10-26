@@ -1,4 +1,4 @@
-# GPU/CUDA Accelerated 3D Wireframe Rendering Engine
+# GPU Accelerated 3D Wireframe Rendering Engine
 
 ## Summary
 This project is our group's final project for our CS4981 GPU Programming course.
