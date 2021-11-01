@@ -52,7 +52,7 @@ public:
     /* ------------------------------ Functions ----------------------------- */
 
 
-    void draw( GraphicsContext *gc, ViewContext *vc ) const override;
+    void draw( GraphicsContext *gc ) const override;
     Line *clone() const override;
 
     std::ostream &out( std::ostream &os ) const override;

@@ -28,7 +28,7 @@
 /* --------------------------------- Class ---------------------------------- */
 
 
-class Point2D : public Vector2<double>
+class Point2D : public Vector2<float>
 {
     /* =============================== PUBLIC =============================== */
 
@@ -38,9 +38,9 @@ public:
 
 
     Point2D();
-    Point2D( double x, double y );
-    explicit Point2D( const Vector2<double> &v );
-    explicit Point2D( const Matrix<double> &m );
+    Point2D( float x, float y );
+    explicit Point2D( const Vector2<float> &v );
+    explicit Point2D( const Matrix<float> &m );
     Point2D( const Point2D &p );
 
     ~Point2D() override;
@@ -67,10 +67,10 @@ public:
 
     Point2D *clone() const;
 
-    Point2D transform( const Matrix<double> &m ) const;
+    Point2D transform( const Matrix<float> &m ) const;
 
-    double magnitude() const;
-    double angle( const Point2D &p ) const;
+    float magnitude() const;
+    float angle( const Point2D &p ) const;
 
     std::ostream &out( std::ostream &os ) const override;
 

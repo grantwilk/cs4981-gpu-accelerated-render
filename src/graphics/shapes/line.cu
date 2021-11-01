@@ -142,19 +142,14 @@ std::ostream &operator<<( std::ostream &os, const Line &line )
  * @brief   Draws this line to an graphics context
  *
  * @param   *gc     The graphics context to draw to
- * @param   *vc     The view context to draw with
  *
  * @return  void
  */
-void Line::draw( GraphicsContext *gc, ViewContext *vc ) const
+void Line::draw( GraphicsContext *gc) const
 {
     // convert from model to device coordinates
-    Point3D start = vc->modelToDevice( *verts[0] );
-    Point3D end = vc->modelToDevice( *verts[1] );
-
-    // set color
-    // gc->setColor( color.toX11() );
-
+    Point3D start = *verts[0];
+    Point3D end = *verts[1];
     // draw line
     gc->drawLine(
         ( int ) start.getX(), ( int ) start.getY(),

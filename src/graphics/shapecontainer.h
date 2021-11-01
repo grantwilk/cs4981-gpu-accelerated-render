@@ -50,6 +50,7 @@ public:
 
     /* ------------------------------ Functions ----------------------------- */
 
+    void pushToDevice();
 
     void add( const Shape &shape );
     void add( const ShapeContainer &sc );
@@ -69,7 +70,9 @@ private:
     /* ----------------------------- Attributes ----------------------------- */
 
 
-    std::set<Shape*> shapes = std::set<Shape*>();
+    std::vector<Shape*> shapes = std::vector<Shape*>();
+    float * d_inputShapes = nullptr;
+    float * d_outputShapes = nullptr;
 
 
     /* ====================================================================== */
@@ -80,6 +83,14 @@ private:
 
 
 std::ostream &operator<<( std::ostream &os, const ShapeContainer &sc );
+
+
+/* ------------------------------ GPU Kernels ------------------------------- */
+
+
+__global__ void applyViewTransform(
+    float * inputShapes, float * outputShapes, float * viewTransform
+);
 
 
 /* --------------------------------- Footer --------------------------------- */

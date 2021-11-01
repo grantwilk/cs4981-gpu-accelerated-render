@@ -40,31 +40,31 @@ Point2D( 0, 0 )
  *
  * @return  The created point
  */
-Point2D::Point2D( double x, double y ):
-Vector2<double>( x, y )
+Point2D::Point2D( float x, float y ):
+Vector2<float>( x, y )
 {}
 
 
 /**
- * @brief   Creates a 2D point from a 2D vector of doubles
+ * @brief   Creates a 2D point from a 2D vector of floats
  *
  * @param   &v  The vector to create the 2D point from
  *
  * @return  The created point
  */
-Point2D::Point2D( const Vector2<double> &v ):
+Point2D::Point2D( const Vector2<float> &v ):
 Point2D( v[0], v[1] )
 {}
 
 
 /**
- * @brief   Creates a 2D point from a 2x1 matrix of doubles
+ * @brief   Creates a 2D point from a 2x1 matrix of floats
  *
  * @param   &m  The matrix to create the 2D point from
  *
  * @return  The created point
  */
-Point2D::Point2D( const Matrix<double> &m ):
+Point2D::Point2D( const Matrix<float> &m ):
 Point2D( m[0][0], m[1][0] )
 {
     if ( ( m.getRows() != 2 ) || ( m.getColumns() != 1 ) )
@@ -260,14 +260,14 @@ Point2D *Point2D::clone() const
  *
  * @return  A transformed copy of this 2D point
  */
-Point2D Point2D::transform( const Matrix<double> &m ) const
+Point2D Point2D::transform( const Matrix<float> &m ) const
 {
     if ( ( m.getRows() != 3 ) || ( m.getColumns() != 3 ) )
     {
         throw MatrixException( "Point2D transformation matrix size mismatch." );
     }
 
-    Matrix<double> transformVector = m * Vector3<double>( getX(), getY(), 1 );
+    Matrix<float> transformVector = m * Vector3<float>( getX(), getY(), 1 );
 
     return Point2D( transformVector[0][0], transformVector[1][0] );
 }
@@ -281,7 +281,7 @@ Point2D Point2D::transform( const Matrix<double> &m ) const
  *
  * @return  The magnitude of the vector between the origin and this 2D point
  */
-double Point2D::magnitude() const
+float Point2D::magnitude() const
 {
     return sqrt( pow( getX(), 2 ) + pow( getY(), 2 ) );
 }
@@ -297,10 +297,10 @@ double Point2D::magnitude() const
  * @return  The angle of the origin-vector formed by this 2D point and the
  *          origin-vector formed by another 2D point in radians
  */
-double Point2D::angle( const Point2D &p ) const
+float Point2D::angle( const Point2D &p ) const
 {
-    double dot = this->dot( p );
-    double det = getX() * p.getY() - getY() * p.getX();
+    float dot = this->dot( p );
+    float det = getX() * p.getY() - getY() * p.getX();
     return atan2( det, dot );
 }
 

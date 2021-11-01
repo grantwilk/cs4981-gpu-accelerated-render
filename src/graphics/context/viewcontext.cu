@@ -12,7 +12,15 @@
 
 # include <cmath>
 
+# include "cudaerr.cuh"
 # include "viewcontext.h"
+
+/* ---------------------------- Static Variables ---------------------------- */
+
+
+float * ViewContext::d_viewTransform = nullptr;
+Matrix<float> ViewContext::transform = Matrix<float>(4, 4);
+Matrix<float> ViewContext::invTransform = Matrix<float>(4, 4);
 
 
 /* ----------------------- Constructors / Destructors ----------------------- */
@@ -28,6 +36,10 @@
 ViewContext::ViewContext( GraphicsContext *gc ) :
     gc( gc )
 {
+    HANDLE_CUDA_ERROR(
+        cudaMalloc(&d_viewTransform, 4 * 4 * sizeof(float))
+    );
+
     update();
 }
 
@@ -96,7 +108,7 @@ Point3D ViewContext::getLookVector()
  *
  * @return  void
  */
-void ViewContext::translate( double x, double y, double z )
+void ViewContext::translate( float x, float y, float z )
 {
     setTranslation(
         viewTranslationX + x,
@@ -114,7 +126,7 @@ void ViewContext::translate( double x, double y, double z )
  *
  * @return  void
  */
-void ViewContext::rotate( double x, double y )
+void ViewContext::rotate( float x, float y )
 {
     setRotation(
         viewRotationX + x,
@@ -132,7 +144,7 @@ void ViewContext::rotate( double x, double y )
  *
  * @return  void
  */
-void ViewContext::scale( double x, double y, double z )
+void ViewContext::scale( float x, float y, float z )
 {
     setScale(
         viewScaleX * x,
@@ -151,7 +163,7 @@ void ViewContext::scale( double x, double y, double z )
  *
  * @return  void
  */
-void ViewContext::pan( double x, double y )
+void ViewContext::pan( float x, float y )
 {
     panX( x );
     panY( y );
@@ -167,7 +179,7 @@ void ViewContext::pan( double x, double y )
  *
  * @return  void
  */
-void ViewContext::setTranslation( double x, double y, double z )
+void ViewContext::setTranslation( float x, float y, float z )
 {
     viewTranslationX = x;
     viewTranslationY = y;
@@ -184,7 +196,7 @@ void ViewContext::setTranslation( double x, double y, double z )
  *
  * @return  void
  */
-void ViewContext::setRotation( double x, double y )
+void ViewContext::setRotation( float x, float y )
 {
     // adjust for rotations greater than pi rads
     while ( x > ( 2 * M_PI ) ) x -= 2 * M_PI;
@@ -211,7 +223,7 @@ void ViewContext::setRotation( double x, double y )
  *
  * @return  void
  */
-void ViewContext::setScale( double x, double y, double z )
+void ViewContext::setScale( float x, float y, float z )
 {
     viewScaleX = x;
     viewScaleY = y;
@@ -229,9 +241,9 @@ void ViewContext::setScale( double x, double y, double z )
  * @return  The translation of the view context's transformation matrix as a
  *          Vector3
  */
-Vector3<double> ViewContext::getTranslation() const
+Vector3<float> ViewContext::getTranslation() const
 {
-    return Vector3<double>(
+    return Vector3<float>(
         viewTranslationX,
         viewTranslationY,
         viewTranslationZ
@@ -247,9 +259,9 @@ Vector3<double> ViewContext::getTranslation() const
  * @return  The rotation of the view context's transformation matrix as a
  *          Vector3
  */
-Vector2<double> ViewContext::getRotation() const
+Vector2<float> ViewContext::getRotation() const
 {
-    return Vector2<double>(
+    return Vector2<float>(
         viewRotationX,
         viewRotationY
     );
@@ -263,9 +275,9 @@ Vector2<double> ViewContext::getRotation() const
  *
  * @return  The scale of the view context's transformation matrix as a Vector3
  */
-Vector3<double> ViewContext::getScale() const
+Vector3<float> ViewContext::getScale() const
 {
-    return Vector3<double>(
+    return Vector3<float>(
         viewScaleX,
         viewScaleY,
         viewScaleZ
@@ -389,23 +401,23 @@ std::ostream &ViewContext::out( std::ostream &os ) const
  *
  * @return  void
  */
-void ViewContext::panX( double magnitude )
+void ViewContext::panX( float magnitude )
 {
     // get Y rotation
-    double rotationY = getRotation().getY();
+    float rotationY = getRotation().getY();
 
     // determine view plane x translation
     int quadrant = ( ( int ) ( rotationY / ( M_PI_2 ) ) ) % 4;
-    double axisRotation = rotationY - ( quadrant * M_PI_2 );
+    float axisRotation = rotationY - ( quadrant * M_PI_2 );
 
     // determine tangent ratio
-    double oppAdjRatio = tan( axisRotation );
+    float oppAdjRatio = tan( axisRotation );
 
     // determine axis-translation signs and magnitudes based on quadrant
-    double signX;
-    double signZ;
-    double translateX;
-    double translateZ;
+    float signX;
+    float signZ;
+    float translateX;
+    float translateZ;
 
     switch ( quadrant )
     {
@@ -442,8 +454,8 @@ void ViewContext::panX( double magnitude )
     }
 
     // normalize translation hypotenuse to magnitude
-    double thetaX = atan( translateX / translateZ );
-    double thetaZ = atan( translateZ / translateX );
+    float thetaX = atan( translateX / translateZ );
+    float thetaZ = atan( translateZ / translateX );
     translateX = signX * magnitude * sin( thetaX );
     translateZ = signZ * magnitude * sin( thetaZ );
 
@@ -466,22 +478,22 @@ void ViewContext::panX( double magnitude )
  *
  * @return  void
  */
-void ViewContext::panY( double magnitude )
+void ViewContext::panY( float magnitude )
 {
     // get X rotation
-    double rotationX = getRotation().getX();
+    float rotationX = getRotation().getX();
 
     // determine view plane x translation
     int quadrant = ( ( int ) ( rotationX / ( M_PI_2 ) ) ) % 4;
-    double axisRotation = rotationX - ( quadrant * M_PI_2 );
+    float axisRotation = rotationX - ( quadrant * M_PI_2 );
 
     // determine tangent ratio
-    double oppAdjRatio = tan( axisRotation );
+    float oppAdjRatio = tan( axisRotation );
 
     // determine axis-translation signs and magnitudes based on quadrant
-    double signY;
-    double translateY;
-    double translateN;
+    float signY;
+    float translateY;
+    float translateN;
 
     switch ( quadrant )
     {
@@ -514,7 +526,7 @@ void ViewContext::panY( double magnitude )
     }
 
     // normalize translation hypotenuse to magnitude
-    double thetaY = atan( translateY / translateN );
+    float thetaY = atan( translateY / translateN );
     translateY = signY * magnitude * sin( thetaY );
 
     Point3D lookTarget = getLookVector();
@@ -543,9 +555,9 @@ void ViewContext::panY( double magnitude )
  *
  * @return  The view translation matrix
  */
-Matrix<double> ViewContext::genViewTranslationMatrix() const
+Matrix<float> ViewContext::genViewTranslationMatrix() const
 {
-    Matrix<double> viewTranslationMatrix = Matrix<double>( 4, 4 );
+    Matrix<float> viewTranslationMatrix = Matrix<float>( 4, 4 );
 
     viewTranslationMatrix[0][0] = 1;
     viewTranslationMatrix[1][1] = 1;
@@ -570,10 +582,10 @@ Matrix<double> ViewContext::genViewTranslationMatrix() const
  *
  * @return  The view rotation matrix
  */
-Matrix<double> ViewContext::genViewRotationMatrix() const
+Matrix<float> ViewContext::genViewRotationMatrix() const
 {
     // generate view rotation X
-    Matrix<double> viewRotationXMatrix = Matrix<double>( 4, 4 );
+    Matrix<float> viewRotationXMatrix = Matrix<float>( 4, 4 );
 
     viewRotationXMatrix[0][0] = 1;
     viewRotationXMatrix[3][3] = 1;
@@ -584,7 +596,7 @@ Matrix<double> ViewContext::genViewRotationMatrix() const
     viewRotationXMatrix[2][2] = cos( viewRotationX );
 
     // generate view rotation Y
-    Matrix<double> viewRotationYMatrix = Matrix<double>( 4, 4 );
+    Matrix<float> viewRotationYMatrix = Matrix<float>( 4, 4 );
 
     viewRotationYMatrix[1][1] = 1;
     viewRotationYMatrix[3][3] = 1;
@@ -595,7 +607,7 @@ Matrix<double> ViewContext::genViewRotationMatrix() const
     viewRotationYMatrix[2][2] = cos( viewRotationY );
 
     // generate combined rotation matrix x -> y
-    Matrix<double> viewRotationMatrix =
+    Matrix<float> viewRotationMatrix =
         viewRotationXMatrix * viewRotationYMatrix;
 
     // std::cout << std::endl << "View Rotation: " << std::endl;
@@ -612,9 +624,9 @@ Matrix<double> ViewContext::genViewRotationMatrix() const
  *
  * @return  The view scale matrix
  */
-Matrix<double> ViewContext::genViewScaleMatrix() const
+Matrix<float> ViewContext::genViewScaleMatrix() const
 {
-    Matrix<double> viewScaleMatrix = Matrix<double>( 4, 4 );
+    Matrix<float> viewScaleMatrix = Matrix<float>( 4, 4 );
 
     viewScaleMatrix[0][0] = viewScaleX;
     viewScaleMatrix[1][1] = viewScaleY;
@@ -635,9 +647,9 @@ Matrix<double> ViewContext::genViewScaleMatrix() const
  *
  * @return  The inverse view translation matrix
  */
-Matrix<double> ViewContext::genInvViewTranslationMatrix() const
+Matrix<float> ViewContext::genInvViewTranslationMatrix() const
 {
-    Matrix<double> invViewTranslationMatrix = genViewTranslationMatrix();
+    Matrix<float> invViewTranslationMatrix = genViewTranslationMatrix();
 
     invViewTranslationMatrix[0][3] = -1 * invViewTranslationMatrix[0][3];
     invViewTranslationMatrix[1][3] = -1 * invViewTranslationMatrix[1][3];
@@ -657,9 +669,9 @@ Matrix<double> ViewContext::genInvViewTranslationMatrix() const
  *
  * @return  The inverse view rotation matrix
  */
-Matrix<double> ViewContext::genInvViewRotationMatrix() const
+Matrix<float> ViewContext::genInvViewRotationMatrix() const
 {
-    Matrix<double> invViewRotationMatrix = genViewRotationMatrix();
+    Matrix<float> invViewRotationMatrix = genViewRotationMatrix();
 
     invViewRotationMatrix = ~invViewRotationMatrix;
 
@@ -677,9 +689,9 @@ Matrix<double> ViewContext::genInvViewRotationMatrix() const
  *
  * @return  The inverse view scale matrix
  */
-Matrix<double> ViewContext::genInvViewScaleMatrix() const
+Matrix<float> ViewContext::genInvViewScaleMatrix() const
 {
-    Matrix<double> invViewScaleMatrix = genViewScaleMatrix();
+    Matrix<float> invViewScaleMatrix = genViewScaleMatrix();
 
     invViewScaleMatrix[0][0] = 1 / invViewScaleMatrix[0][0];
     invViewScaleMatrix[1][1] = 1 / invViewScaleMatrix[1][1];
@@ -699,17 +711,17 @@ Matrix<double> ViewContext::genInvViewScaleMatrix() const
  *
  * @return  The screen translation matrix
  */
-Matrix<double> ViewContext::genScreenTranslationMatrix() const
+Matrix<float> ViewContext::genScreenTranslationMatrix() const
 {
-    Matrix<double> screenTranslationMatrix = Matrix<double>( 4, 4 );
+    Matrix<float> screenTranslationMatrix = Matrix<float>( 4, 4 );
 
     screenTranslationMatrix[0][0] = 1;
     screenTranslationMatrix[1][1] = 1;
     screenTranslationMatrix[2][2] = 1;
     screenTranslationMatrix[3][3] = 1;
 
-    screenTranslationMatrix[0][3] = ( ( double ) gc->getWindowWidth() ) / 2;
-    screenTranslationMatrix[1][3] = ( ( double ) gc->getWindowHeight() ) / 2;
+    screenTranslationMatrix[0][3] = ( ( float ) gc->getWindowWidth() ) / 2;
+    screenTranslationMatrix[1][3] = ( ( float ) gc->getWindowHeight() ) / 2;
 
     // std::cout << std::endl << "Screen Translation: " << std::endl;
     // screenTranslationMatrix.out( std::cout);
@@ -725,9 +737,9 @@ Matrix<double> ViewContext::genScreenTranslationMatrix() const
  *
  * @return  The screen flip matrix
  */
-Matrix<double> ViewContext::genScreenFlipMatrix() const
+Matrix<float> ViewContext::genScreenFlipMatrix() const
 {
-    Matrix<double> screenFlipMatrix = Matrix<double>( 4, 4 );
+    Matrix<float> screenFlipMatrix = Matrix<float>( 4, 4 );
 
     screenFlipMatrix[0][0] = 1;
     screenFlipMatrix[1][1] = -1;
@@ -748,9 +760,9 @@ Matrix<double> ViewContext::genScreenFlipMatrix() const
  *
  * @return  The inverse screen translation matrix
  */
-Matrix<double> ViewContext::genInvScreenTranslationMatrix() const
+Matrix<float> ViewContext::genInvScreenTranslationMatrix() const
 {
-    Matrix<double> invScreenTranslationMatrix = genScreenTranslationMatrix();
+    Matrix<float> invScreenTranslationMatrix = genScreenTranslationMatrix();
 
     invScreenTranslationMatrix[0][3] = -1 * invScreenTranslationMatrix[0][3];
     invScreenTranslationMatrix[1][3] = -1 * invScreenTranslationMatrix[1][3];
@@ -770,9 +782,9 @@ Matrix<double> ViewContext::genInvScreenTranslationMatrix() const
  *
  * @return  The inverse screen flip matrix
  */
-Matrix<double> ViewContext::genInvScreenFlipMatrix() const
+Matrix<float> ViewContext::genInvScreenFlipMatrix() const
 {
-    Matrix<double> invScreenFlipMatrix = genScreenFlipMatrix();
+    Matrix<float> invScreenFlipMatrix = genScreenFlipMatrix();
 
     invScreenFlipMatrix[0][0] = 1 / invScreenFlipMatrix[0][0];
     invScreenFlipMatrix[1][1] = 1 / invScreenFlipMatrix[1][1];

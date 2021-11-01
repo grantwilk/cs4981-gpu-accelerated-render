@@ -43,14 +43,18 @@ public:
     /* ----------------------------- Attributes ----------------------------- */
 
 
-    constexpr static const double DEFAULT_VIEW_TRANSLATION_X = 0;
-    constexpr static const double DEFAULT_VIEW_TRANSLATION_Y = 0;
-    constexpr static const double DEFAULT_VIEW_TRANSLATION_Z = 0;
-    constexpr static const double DEFAULT_VIEW_ROTATION_X = 0;
-    constexpr static const double DEFAULT_VIEW_ROTATION_Y = 0;
-    constexpr static const double DEFAULT_VIEW_SCALE_X = 100;
-    constexpr static const double DEFAULT_VIEW_SCALE_Y = 100;
-    constexpr static const double DEFAULT_VIEW_SCALE_Z = 100;
+    constexpr static const float DEFAULT_VIEW_TRANSLATION_X = 0;
+    constexpr static const float DEFAULT_VIEW_TRANSLATION_Y = 0;
+    constexpr static const float DEFAULT_VIEW_TRANSLATION_Z = 0;
+    constexpr static const float DEFAULT_VIEW_ROTATION_X = 0;
+    constexpr static const float DEFAULT_VIEW_ROTATION_Y = 0;
+    constexpr static const float DEFAULT_VIEW_SCALE_X = 100;
+    constexpr static const float DEFAULT_VIEW_SCALE_Y = 100;
+    constexpr static const float DEFAULT_VIEW_SCALE_Z = 100;
+
+    static float * d_viewTransform;
+    static Matrix<float> transform;
+    static Matrix<float> invTransform;
 
 
     /* --------------------- Constructors / Destructors --------------------- */
@@ -68,19 +72,19 @@ public:
 
     Point3D getLookVector();
 
-    void translate( double x, double y, double z );
-    void rotate( double x, double y );
-    void scale( double x, double y, double z );
+    void translate( float x, float y, float z );
+    void rotate( float x, float y );
+    void scale( float x, float y, float z );
 
-    void pan( double x, double y );
+    void pan( float x, float y );
 
-    void setTranslation( double x, double y, double z );
-    void setRotation( double x, double y );
-    void setScale( double x, double y, double z );
+    void setTranslation( float x, float y, float z );
+    void setRotation( float x, float y );
+    void setScale( float x, float y, float z );
 
-    Vector3<double> getTranslation() const;
-    Vector2<double> getRotation() const;
-    Vector3<double> getScale() const;
+    Vector3<float> getTranslation() const;
+    Vector2<float> getRotation() const;
+    Vector3<float> getScale() const;
 
     void resetTranslation();
     void resetRotation();
@@ -102,18 +106,14 @@ private:
 
     /* ----------------------------- Attributes ----------------------------- */
 
-
-    Matrix<double> transform = Matrix<double>( 4, 4 );
-    Matrix<double> invTransform = Matrix<double>( 4, 4 );
-
-    double viewTranslationX = DEFAULT_VIEW_TRANSLATION_X;
-    double viewTranslationY = DEFAULT_VIEW_TRANSLATION_Y;
-    double viewTranslationZ = DEFAULT_VIEW_TRANSLATION_Z;
-    double viewRotationX = DEFAULT_VIEW_ROTATION_X;
-    double viewRotationY = DEFAULT_VIEW_ROTATION_Y;
-    double viewScaleX = DEFAULT_VIEW_SCALE_X;
-    double viewScaleY = DEFAULT_VIEW_SCALE_Y;
-    double viewScaleZ = DEFAULT_VIEW_SCALE_Z;
+    float viewTranslationX = DEFAULT_VIEW_TRANSLATION_X;
+    float viewTranslationY = DEFAULT_VIEW_TRANSLATION_Y;
+    float viewTranslationZ = DEFAULT_VIEW_TRANSLATION_Z;
+    float viewRotationX = DEFAULT_VIEW_ROTATION_X;
+    float viewRotationY = DEFAULT_VIEW_ROTATION_Y;
+    float viewScaleX = DEFAULT_VIEW_SCALE_X;
+    float viewScaleY = DEFAULT_VIEW_SCALE_Y;
+    float viewScaleZ = DEFAULT_VIEW_SCALE_Z;
 
     GraphicsContext *gc;
 
@@ -121,22 +121,22 @@ private:
     /* ------------------------------ Functions ----------------------------- */
 
 
-    void panX( double magnitude );
-    void panY( double magnitude );
+    void panX( float magnitude );
+    void panY( float magnitude );
 
-    Matrix<double> genViewTranslationMatrix() const;
-    Matrix<double> genViewRotationMatrix() const;
-    Matrix<double> genViewScaleMatrix() const;
+    Matrix<float> genViewTranslationMatrix() const;
+    Matrix<float> genViewRotationMatrix() const;
+    Matrix<float> genViewScaleMatrix() const;
 
-    Matrix<double> genInvViewTranslationMatrix() const;
-    Matrix<double> genInvViewRotationMatrix() const;
-    Matrix<double> genInvViewScaleMatrix() const;
+    Matrix<float> genInvViewTranslationMatrix() const;
+    Matrix<float> genInvViewRotationMatrix() const;
+    Matrix<float> genInvViewScaleMatrix() const;
 
-    Matrix<double> genScreenTranslationMatrix() const;
-    Matrix<double> genScreenFlipMatrix() const;
+    Matrix<float> genScreenTranslationMatrix() const;
+    Matrix<float> genScreenFlipMatrix() const;
 
-    Matrix<double> genInvScreenTranslationMatrix() const;
-    Matrix<double> genInvScreenFlipMatrix() const;
+    Matrix<float> genInvScreenTranslationMatrix() const;
+    Matrix<float> genInvScreenFlipMatrix() const;
 
 
     /* ====================================================================== */

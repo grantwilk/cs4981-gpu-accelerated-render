@@ -143,19 +143,15 @@ std::ostream &operator<<( std::ostream &os, const Triangle &triangle )
  * @brief   Draws this shape to a graphics context
  *
  * @param   *gc     The graphics context to draw to
- * @param   *vc     The view context to draw with
  *
  * @return  void
  */
-void Triangle::draw( GraphicsContext *gc, ViewContext *vc ) const
+void Triangle::draw( GraphicsContext *gc ) const
 {
     // convert from model to device coordinates
-    Point3D start = vc->modelToDevice( *verts[0] );
-    Point3D mid = vc->modelToDevice( *verts[1] );
-    Point3D end = vc->modelToDevice( *verts[2] );
-
-    // set color
-    // gc->setColor( color.toX11() );
+    Point3D start = *verts[0];
+    Point3D mid = *verts[1];
+    Point3D end = *verts[2];
 
     // draw lines
     gc->drawLine( ( int ) start.getX(), ( int ) start.getY(),

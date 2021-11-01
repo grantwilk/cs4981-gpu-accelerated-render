@@ -65,7 +65,7 @@ public:
     /* ------------------------------ Functions ----------------------------- */
 
 
-    virtual void draw( GraphicsContext *gc, ViewContext *vc ) const = 0;
+    virtual void draw( GraphicsContext *gc ) const = 0;
     virtual Shape *clone() const = 0;
 
     const Color &getColor() const;

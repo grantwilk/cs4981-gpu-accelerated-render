@@ -14,8 +14,8 @@
 # include <iostream>
 # include <cmath>
 
-# include "drawcontext.h"
 # include "line.h"
+# include "drawcontext.h"
 # include "shape.h"
 # include "stlreader.h"
 
@@ -260,8 +260,8 @@ void DrawContext::mouseMove( GraphicsContext *gc, int x, int y )
 
         if ( std::abs( lastMouseDelta.magnitude() - mouseDelta.magnitude() ) > mouseDeltaThreshold )
         {
-            double scale = vc->getScale()[0];
-            Vector3<double> currentTranslation = vc->getTranslation();
+            float scale = vc->getScale()[0];
+            Vector3<float> currentTranslation = vc->getTranslation();
 
             vc->pan(
                 mouseDelta.getX() / scale,
@@ -288,7 +288,7 @@ void DrawContext::mouseMove( GraphicsContext *gc, int x, int y )
 
         if ( std::abs( lastMouseDelta.magnitude() - mouseDelta.magnitude() ) > mouseDeltaThreshold )
         {
-            Vector2<double> currentRotation = vc->getRotation();
+            Vector2<float> currentRotation = vc->getRotation();
 
             vc->rotate(
                 mouseDelta.getY() / 200,
@@ -347,13 +347,13 @@ void DrawContext::draw3DAxis( GraphicsContext *gc )
     Line zAxis = Line( origin, zUnitVector );
 
     gc->setColor( Color( 1, 0, 0 ).toX11() );
-    xAxis.draw( gc, vc );
+    // xAxis.draw( gc, vc );
 
     gc->setColor( Color( 0, 1, 0 ).toX11() );
-    yAxis.draw( gc, vc );
+    // yAxis.draw( gc, vc );
 
     gc->setColor( Color( 0, 0, 1 ).toX11() );
-    zAxis.draw( gc, vc );
+    // zAxis.draw( gc, vc );
 }
 
 
@@ -374,6 +374,7 @@ void DrawContext::fileOpen( GraphicsContext *gc )
     // open file and read facets
     STLReader stlReader = STLReader( fileName );
     sc = stlReader.readFacets();
+    sc.pushToDevice();
 
     // reset view and paint
     vc->resetView();

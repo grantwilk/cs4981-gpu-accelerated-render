@@ -41,31 +41,31 @@ Point3D::Point3D():
  *
  * @return  The created point
  */
-Point3D::Point3D( double x, double y, double z ):
-    Vector3<double>( x, y, z )
+Point3D::Point3D( float x, float y, float z ):
+    Vector3<float>( x, y, z )
 {}
 
 
 /**
- * @brief   Creates a 3D point from a 3D vector of doubles
+ * @brief   Creates a 3D point from a 3D vector of floats
  *
  * @param   &v  The vector to create the 3D point from
  *
  * @return  The created point
  */
-Point3D::Point3D( const Vector3<double> &v ):
+Point3D::Point3D( const Vector3<float> &v ):
     Point3D( v[0], v[1], v[2] )
 {}
 
 
 /**
- * @brief   Creates a 3D point from a 2x1 matrix of doubles
+ * @brief   Creates a 3D point from a 2x1 matrix of floats
  *
  * @param   &m  The matrix to create the 3D point from
  *
  * @return  The created point
  */
-Point3D::Point3D( const Matrix<double> &m ):
+Point3D::Point3D( const Matrix<float> &m ):
     Point3D( m[0][0], m[1][0], m[2][0] )
 {
     if ( ( m.getRows() != 3 ) || ( m.getColumns() != 1 ) )
@@ -262,14 +262,14 @@ Point3D *Point3D::clone() const
  *
  * @return  A transformed copy of this 3D point
  */
-Point3D Point3D::transform( const Matrix<double> &m ) const
+Point3D Point3D::transform( const Matrix<float> &m ) const
 {
     if ( ( m.getRows() != 4 ) || ( m.getColumns() != 4 ) )
     {
         throw MatrixException( "Point3D transformation matrix size mismatch." );
     }
 
-    Matrix<double> transformVector = m * Vector4<double>( getX(), getY(), getZ(), 1 );
+    Matrix<float> transformVector = m * Vector4<float>( getX(), getY(), getZ(), 1 );
 
     return Point3D( transformVector[0][0], transformVector[1][0], transformVector[2][0] );
 }
@@ -283,7 +283,7 @@ Point3D Point3D::transform( const Matrix<double> &m ) const
  *
  * @return  The magnitude of the vector between the origin and this 3D point
  */
-double Point3D::magnitude() const
+float Point3D::magnitude() const
 {
     return sqrt( pow( getX(), 2 ) + pow( getY(), 2 ) + pow( getZ(), 2 ) );
 }
@@ -298,11 +298,11 @@ double Point3D::magnitude() const
  * @return  The angle of the vector between this 3D point and another 2D
  *          point in radians
  */
-double Point3D::angle( const Point3D &p ) const
+float Point3D::angle( const Point3D &p ) const
 {
-    double dot = this->dot( p );
-    double magSquared = pow( this->magnitude(), 2 );
-    double pMagSquared = pow( p.magnitude(), 2 );
+    float dot = this->dot( p );
+    float magSquared = pow( this->magnitude(), 2 );
+    float pMagSquared = pow( p.magnitude(), 2 );
     return acos( dot / sqrt( magSquared * pMagSquared ) );
 }
 

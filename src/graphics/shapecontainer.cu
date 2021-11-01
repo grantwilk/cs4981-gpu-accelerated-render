@@ -13,11 +13,19 @@
 # include <algorithm>
 # include <set>
 # include <sstream>
+#include <driver_types.h>
 
-# include "line.h"
+# include "cudaerr.cuh"
 # include "shape.h"
 # include "shapecontainer.h"
 # include "triangle.h"
+
+
+/* ----------------------- Constructors / Destructors ----------------------- */
+
+
+const unsigned int SHAPE_DIM = 3;
+const unsigned int VERT_DIM = 4;
 
 
 /* ----------------------- Constructors / Destructors ----------------------- */
@@ -102,6 +110,66 @@ std::ostream &operator<<( std::ostream &os, const ShapeContainer &sc )
 
 
 /**
+ * Pushes this shape container to the GPU device
+ */
+void ShapeContainer::pushToDevice()
+{
+    // input shapes buffer
+    float inputShapes[shapes.size() * SHAPE_DIM * VERT_DIM];
+
+    // copy each tri to input memory
+    for (unsigned int shapeIdx = 0; shapeIdx < shapes.size(); shapeIdx++)
+    {
+        unsigned int shapeOffset = shapeIdx * SHAPE_DIM * VERT_DIM;
+        for (unsigned int vertIdx = 0; vertIdx < SHAPE_DIM; vertIdx++)
+        {
+            unsigned int vertOffset = vertIdx * VERT_DIM;
+            for (unsigned int coordIdx = 0; coordIdx < VERT_DIM; coordIdx++)
+            {
+                if (coordIdx < VERT_DIM - 1)
+                {
+                    inputShapes[shapeOffset + vertOffset + coordIdx] =
+                        (*(shapes[shapeIdx]))[vertIdx][coordIdx];
+                }
+                else
+                {
+                    inputShapes[shapeOffset + vertOffset + coordIdx] = 1;
+                }
+            }
+        }
+    }
+
+    // free existing device mallocs if they exist
+    if ( d_inputShapes != nullptr)
+    {
+        HANDLE_CUDA_ERROR(cudaFree(d_inputShapes));
+    }
+    if ( d_outputShapes != nullptr)
+    {
+        HANDLE_CUDA_ERROR(cudaFree(d_outputShapes));
+    }
+
+    // malloc new input and output
+    HANDLE_CUDA_ERROR(
+        cudaMalloc(&d_inputShapes, shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float))
+    );
+    HANDLE_CUDA_ERROR(
+        cudaMalloc(&d_outputShapes, shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float))
+    );
+
+    // copy shapes to device
+    HANDLE_CUDA_ERROR(
+        cudaMemcpy(
+            (void *) d_inputShapes,
+            (void *) inputShapes,
+            shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float),
+            cudaMemcpyHostToDevice
+        )
+    );
+}
+
+
+/**
  * @brief   Adds a shape to this shape container
  *
  * @param   &shape  The shape to add
@@ -110,7 +178,7 @@ std::ostream &operator<<( std::ostream &os, const ShapeContainer &sc )
  */
 void ShapeContainer::add( const Shape &shape )
 {
-    shapes.insert( shape.clone() );
+    shapes.insert( shapes.end(), shape.clone() );
 }
 
 
@@ -142,9 +210,81 @@ void ShapeContainer::add( const ShapeContainer &sc )
  */
 void ShapeContainer::draw( GraphicsContext *gc, ViewContext *vc ) const
 {
-    std::for_each( shapes.begin(), shapes.end(), [gc, vc]( Shape *shape )
+    // input shapes buffer
+    float outputShapes[shapes.size() * SHAPE_DIM * VERT_DIM];
+
+    // copy view transform to local
+    float viewTransform[VERT_DIM][VERT_DIM];
+
+    for (unsigned int row = 0; row < VERT_DIM; row++)
+    {
+        for (unsigned int col = 0; col < VERT_DIM; col++)
+        {
+            viewTransform[row][col] = ViewContext::transform[row][col];
+        }
+    }
+
+    // copy view transform to device
+    HANDLE_CUDA_ERROR(
+        cudaMemcpy(
+            ( void * ) ViewContext::d_viewTransform,
+            ( void * ) viewTransform,
+            VERT_DIM * VERT_DIM * sizeof( float ),
+            cudaMemcpyHostToDevice
+        )
+    );
+
+    // zero output matrix
+    HANDLE_CUDA_ERROR(
+        cudaMemset(d_outputShapes, 0, shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float))
+    );
+
+    // run GPU kernel
+    unsigned int blocks = ceil(shapes.size() / 1024.0);
+
+    applyViewTransform<<<blocks, 1024>>>(
+        d_inputShapes,
+        d_outputShapes,
+        ViewContext::d_viewTransform
+    );
+    HANDLE_CUDA_ERROR(cudaDeviceSynchronize());
+
+    // copy shapes from device
+    HANDLE_CUDA_ERROR(
+        cudaMemcpy(
+            (void *) outputShapes,
+            (void *) d_outputShapes,
+            shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float),
+            cudaMemcpyDeviceToHost
+        )
+    );
+
+    // parse output points into output shapes vector
+    std::vector<Shape*> parsedShapes;
+
+    for (unsigned int shapeIdx = 0; shapeIdx < shapes.size(); shapeIdx++)
+    {
+        unsigned int shapeOffset = shapeIdx * SHAPE_DIM * VERT_DIM;
+
+        Point3D verts[3];
+
+        for (unsigned int vertIdx = 0; vertIdx < SHAPE_DIM; vertIdx++)
+        {
+            unsigned int vertOffset = vertIdx * VERT_DIM;
+
+            verts[vertIdx].setX(outputShapes[shapeOffset + vertOffset + 0]);
+            verts[vertIdx].setY(outputShapes[shapeOffset + vertOffset + 1]);
+            verts[vertIdx].setZ(outputShapes[shapeOffset + vertOffset + 2]);
+        }
+
+        Triangle * tri = new Triangle(verts[0], verts[1], verts[2]);
+        parsedShapes.insert(parsedShapes.end(), tri);
+    }
+
+    // draw shapes
+    std::for_each(parsedShapes.begin(), parsedShapes.end(), [gc](Shape *shape)
        {
-           shape->draw( gc, vc );
+           shape->draw(gc);
        }
     );
 }
@@ -198,6 +338,36 @@ void ShapeContainer::erase()
 unsigned int ShapeContainer::size()
 {
     return shapes.size();
+}
+
+
+/* ------------------------------ GPU Kernels ------------------------------- */
+
+
+__global__ void applyViewTransform(
+    float * inputShapes, float * outputShapes, float * viewTransform
+)
+{
+    unsigned int shapeIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int shapeOffset = shapeIdx * SHAPE_DIM * VERT_DIM;
+
+    // matrix vector multiplication
+    for (unsigned int vertIdx = 0; vertIdx < SHAPE_DIM; vertIdx++)
+    {
+        unsigned int vertOffset = vertIdx * VERT_DIM;
+
+        for (unsigned int row = 0; row < VERT_DIM; row++)
+        {
+
+            unsigned int rowOffset = row * VERT_DIM;
+
+            for (unsigned int i = 0; i < VERT_DIM; i++)
+            {
+                outputShapes[shapeOffset + vertOffset + row] +=
+                    viewTransform[rowOffset + i] * inputShapes[shapeOffset + vertOffset + i];
+            }
+        }
+    }
 }
 
 

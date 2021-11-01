@@ -27,7 +27,7 @@
 /* --------------------------------- Class ---------------------------------- */
 
 
-class Point3D : public Vector3<double>
+class Point3D : public Vector3<float>
 {
     /* =============================== PUBLIC =============================== */
 
@@ -37,9 +37,9 @@ public:
 
 
     Point3D();
-    Point3D( double x, double y, double z );
-    explicit Point3D( const Vector3<double> &v );
-    explicit Point3D( const Matrix<double> &m );
+    Point3D( float x, float y, float z );
+    explicit Point3D( const Vector3<float> &v );
+    explicit Point3D( const Matrix<float> &m );
     Point3D( const Point3D &p );
 
     ~Point3D() override;
@@ -66,10 +66,10 @@ public:
 
     Point3D *clone() const;
 
-    Point3D transform( const Matrix<double> &m ) const;
+    Point3D transform( const Matrix<float> &m ) const;
 
-    double magnitude() const;
-    double angle( const Point3D &p ) const;
+    float magnitude() const;
+    float angle( const Point3D &p ) const;
 
     std::ostream &out( std::ostream &os ) const override;
 
