@@ -18,7 +18,7 @@
  * The only constructor provided.  Allows size of window and background
  * color be specified.
  * */
-X11Context::X11Context(unsigned int sizex=400,unsigned int sizey=400,
+X11Context::X11Context(unsigned int sizex,unsigned int sizey,
 						unsigned int bg_color=X11Context::BLACK)
 {
 	// Open the display
