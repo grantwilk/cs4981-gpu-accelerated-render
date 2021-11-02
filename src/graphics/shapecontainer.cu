@@ -11,9 +11,10 @@
 
 
 # include <algorithm>
+# include <chrono>
 # include <set>
 # include <sstream>
-#include <driver_types.h>
+# include <driver_types.h>
 
 # include "cudaerr.cuh"
 # include "shape.h"
@@ -209,6 +210,8 @@ void ShapeContainer::add( const ShapeContainer &sc )
  */
 void ShapeContainer::draw( GraphicsContext *gc, ViewContext *vc ) const
 {
+    auto drawStartTime = std::chrono::high_resolution_clock::now();
+
     // copy view transform to local
     float viewTransform[VERT_DIM][VERT_DIM];
 
@@ -275,12 +278,24 @@ void ShapeContainer::draw( GraphicsContext *gc, ViewContext *vc ) const
         parsedShapes.insert(parsedShapes.end(), tri);
     }
 
+    auto transformEndTime = std::chrono::high_resolution_clock::now();
+    double transformTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        transformEndTime - drawStartTime
+    ).count() / 1000000.0;
+    std::cout << "Transform Time: " << transformTime << "ms" << std::endl;
+
     // draw shapes
     std::for_each(parsedShapes.begin(), parsedShapes.end(), [gc](Shape *shape)
        {
            shape->draw(gc);
        }
     );
+
+    auto drawEndTime = std::chrono::high_resolution_clock::now();
+    double drawTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        drawEndTime - drawStartTime
+    ).count() / 1000000.0;
+    std::cout << "Draw Time: " << drawTime << "ms" << std::endl;
 }
 
 
