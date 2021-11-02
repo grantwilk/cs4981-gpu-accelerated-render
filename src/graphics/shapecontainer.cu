@@ -114,31 +114,6 @@ std::ostream &operator<<( std::ostream &os, const ShapeContainer &sc )
  */
 void ShapeContainer::pushToDevice()
 {
-    // input shapes buffer
-    float inputShapes[shapes.size() * SHAPE_DIM * VERT_DIM];
-
-    // copy each tri to input memory
-    for (unsigned int shapeIdx = 0; shapeIdx < shapes.size(); shapeIdx++)
-    {
-        unsigned int shapeOffset = shapeIdx * SHAPE_DIM * VERT_DIM;
-        for (unsigned int vertIdx = 0; vertIdx < SHAPE_DIM; vertIdx++)
-        {
-            unsigned int vertOffset = vertIdx * VERT_DIM;
-            for (unsigned int coordIdx = 0; coordIdx < VERT_DIM; coordIdx++)
-            {
-                if (coordIdx < VERT_DIM - 1)
-                {
-                    inputShapes[shapeOffset + vertOffset + coordIdx] =
-                        (*(shapes[shapeIdx]))[vertIdx][coordIdx];
-                }
-                else
-                {
-                    inputShapes[shapeOffset + vertOffset + coordIdx] = 1;
-                }
-            }
-        }
-    }
-
     // free existing device mallocs if they exist
     if ( d_inputShapes != nullptr)
     {
@@ -153,19 +128,43 @@ void ShapeContainer::pushToDevice()
     HANDLE_CUDA_ERROR(
         cudaMalloc(&d_inputShapes, shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float))
     );
+
     HANDLE_CUDA_ERROR(
         cudaMalloc(&d_outputShapes, shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float))
     );
 
-    // copy shapes to device
-    HANDLE_CUDA_ERROR(
-        cudaMemcpy(
-            (void *) d_inputShapes,
-            (void *) inputShapes,
-            shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float),
-            cudaMemcpyHostToDevice
-        )
-    );
+    // copy each tri to input memory
+    for (unsigned int shapeIdx = 0; shapeIdx < shapes.size(); shapeIdx++)
+    {
+
+        float shape[SHAPE_DIM][VERT_DIM];
+        unsigned int shapeOffset = shapeIdx * SHAPE_DIM * VERT_DIM;
+
+        for (unsigned int vertIdx = 0; vertIdx < SHAPE_DIM; vertIdx++)
+        {
+            for (unsigned int coordIdx = 0; coordIdx < VERT_DIM; coordIdx++)
+            {
+                if (coordIdx < VERT_DIM - 1)
+                {
+                    shape[vertIdx][coordIdx] = (*(shapes[shapeIdx]))[vertIdx][coordIdx];
+                }
+                else
+                {
+                    shape[vertIdx][coordIdx] = 1;
+                }
+            }
+        }
+
+        HANDLE_CUDA_ERROR(
+            cudaMemcpy(
+                (void *) (d_inputShapes + shapeOffset),
+                (void *) shape,
+                SHAPE_DIM * VERT_DIM * sizeof(float),
+                cudaMemcpyHostToDevice
+            )
+        );
+
+    }
 }
 
 
@@ -210,9 +209,6 @@ void ShapeContainer::add( const ShapeContainer &sc )
  */
 void ShapeContainer::draw( GraphicsContext *gc, ViewContext *vc ) const
 {
-    // input shapes buffer
-    float outputShapes[shapes.size() * SHAPE_DIM * VERT_DIM];
-
     // copy view transform to local
     float viewTransform[VERT_DIM][VERT_DIM];
 
@@ -249,32 +245,30 @@ void ShapeContainer::draw( GraphicsContext *gc, ViewContext *vc ) const
     );
     HANDLE_CUDA_ERROR(cudaDeviceSynchronize());
 
-    // copy shapes from device
-    HANDLE_CUDA_ERROR(
-        cudaMemcpy(
-            (void *) outputShapes,
-            (void *) d_outputShapes,
-            shapes.size() * SHAPE_DIM * VERT_DIM * sizeof(float),
-            cudaMemcpyDeviceToHost
-        )
-    );
-
     // parse output points into output shapes vector
     std::vector<Shape*> parsedShapes;
 
     for (unsigned int shapeIdx = 0; shapeIdx < shapes.size(); shapeIdx++)
     {
+        float shape[SHAPE_DIM][VERT_DIM];
         unsigned int shapeOffset = shapeIdx * SHAPE_DIM * VERT_DIM;
+
+        HANDLE_CUDA_ERROR(
+            cudaMemcpy(
+                (void *) shape,
+                (void *) (d_outputShapes + shapeOffset),
+                SHAPE_DIM * VERT_DIM * sizeof(float),
+                cudaMemcpyDeviceToHost
+            )
+        );
 
         Point3D verts[3];
 
         for (unsigned int vertIdx = 0; vertIdx < SHAPE_DIM; vertIdx++)
         {
-            unsigned int vertOffset = vertIdx * VERT_DIM;
-
-            verts[vertIdx].setX(outputShapes[shapeOffset + vertOffset + 0]);
-            verts[vertIdx].setY(outputShapes[shapeOffset + vertOffset + 1]);
-            verts[vertIdx].setZ(outputShapes[shapeOffset + vertOffset + 2]);
+            verts[vertIdx].setX(shape[vertIdx][0]);
+            verts[vertIdx].setY(shape[vertIdx][1]);
+            verts[vertIdx].setZ(shape[vertIdx][2]);
         }
 
         Triangle * tri = new Triangle(verts[0], verts[1], verts[2]);
