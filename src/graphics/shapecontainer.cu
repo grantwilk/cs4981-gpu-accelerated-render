@@ -295,7 +295,7 @@ void ShapeContainer::draw( GraphicsContext *gc, ViewContext *vc ) const
     double drawTime = std::chrono::duration_cast<std::chrono::nanoseconds>(
         drawEndTime - drawStartTime
     ).count() / 1000000.0;
-    std::cout << "Draw Time: " << drawTime << "ms" << std::endl;
+    std::cout << "Total Draw Time: " << drawTime << "ms" << std::endl;
 }
 
 
