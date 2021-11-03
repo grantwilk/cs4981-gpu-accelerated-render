@@ -28,7 +28,11 @@ file( GLOB_RECURSE SOURCES
 add_executable( ${PROJECT_NAME} ${SOURCES} )
 
 # find and include x11 library
-find_package( X11 REQUIRED )
+# find_package( X11 REQUIRED )
+
+set( X11_FOUND 1 )
+set( X11_INCLUDE_DIR /usr/include/X11 )
+set( X11_LIBRARIES /usr/lib/x86_64-linux-gnu/libX11.so )
 
 message( STATUS "X11_FOUND = ${X11_FOUND}" )
 message( STATUS "X11_INCLUDE_DIR = ${X11_INCLUDE_DIR}" )
